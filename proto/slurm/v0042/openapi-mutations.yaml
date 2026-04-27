@@ -1,0 +1,9 @@
+mutations:
+  - type: add_header_parameter
+    path_prefix: "/slurm/v0.0.42/"
+    parameter:
+      name: olcf-resource
+      required: true
+      description: Specifies which compute resource to target
+      schema:
+        type: string

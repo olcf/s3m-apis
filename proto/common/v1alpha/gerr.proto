@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package olcf.s3m.common.v1alpha;
+
+option go_package = "github.com/olcf/s3m-apis/common/v1alpha;commonpb";
+
+message GerrError {
+  uint32 code = 1;
+  optional GerrErrorNode child = 2;
+
+  string message = 3;
+
+  bool private = 4;
+  optional string public_message = 5;
+
+  map<string, string> public_fields = 6;
+  map<string, string> private_fields = 7;
+}
+
+message GerrGoError {
+  string error = 1;
+  string kind = 2;
+}
+
+message GerrErrorNode {
+  oneof node {
+    GerrError error = 1;
+    GerrGoError go_error = 2;
+  }
+}
+
+message GerrPrivateDataMarker {}

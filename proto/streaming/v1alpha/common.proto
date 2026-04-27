@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package olcf.s3m.streaming.v1alpha;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/olcf/s3m-apis/streaming/v1alpha;streamingpb";
+
+//
+// Resource configuration
+
+message BackendResourceOption {
+  string key = 1;
+  string description = 2;
+  int32 min = 3;
+  int32 max = 4;
+  int32 default = 5;
+}
+
+message BackendFeatureFlag {
+  string key = 1;
+  string description = 2;
+  bool default = 3;
+}
+
+//
+// Networking
+
+message AppEndpoints {
+  repeated string addresses = 1;
+  map<string, uint32> ports = 2;
+}
+
+//
+// Lifetimes
+
+message Lifetime {
+  google.protobuf.Timestamp provisioned_at = 1;
+  google.protobuf.Timestamp extended_at = 2;
+  uint32 seconds_lifetime = 3;
+  uint32 seconds_remaining = 4;
+}

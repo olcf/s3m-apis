@@ -1,0 +1,16 @@
+type: google.api.Service
+config_version: 3
+
+http:
+  rules:
+    - selector: olcf.s3m.status.v1alpha.Status.ListResources
+      get: /v1alpha/status
+
+    - selector: olcf.s3m.status.v1alpha.Status.GetResource
+      get: /v1alpha/status/{resource_name}
+
+    - selector: olcf.s3m.status.v1alpha.Status.ListDowntimesCurrent
+      get: /v1alpha/status/downtimes
+
+    - selector: olcf.s3m.status.v1alpha.Status.ListDowntimesUpcoming
+      get: /v1alpha/status/downtimes/upcoming

@@ -1,0 +1,42 @@
+type: google.api.Service
+config_version: 3
+
+http:
+  rules:
+    - selector: olcf.s3m.slurm.v0042.SlurmIndirect.GetDiag
+      get: /api/slurm-indirect/v0.0.42/diag
+
+      ###
+
+    - selector: olcf.s3m.slurm.v0042.SlurmIndirect.GetJob
+      get: /api/slurm-indirect/v0.0.42/job/{job_id}
+
+    - selector: olcf.s3m.slurm.v0042.SlurmIndirect.GetJobs
+      get: /api/slurm-indirect/v0.0.42/jobs
+
+    - selector: olcf.s3m.slurm.v0042.SlurmIndirect.PostJobSubmit
+      post: /api/slurm-indirect/v0.0.42/job/submit
+      body: "*"
+
+    - selector: olcf.s3m.slurm.v0042.SlurmIndirect.DeleteJob
+      delete: /api/slurm-indirect/v0.0.42/job/{job_id}
+
+      ###
+
+    - selector: olcf.s3m.slurm.v0042.SlurmIndirect.GetNodes
+      get: /api/slurm-indirect/v0.0.42/nodes
+
+      ###
+
+    - selector: olcf.s3m.slurm.v0042.SlurmIndirect.GetPartitions
+      get: /api/slurm-indirect/v0.0.42/partitions
+
+      ###
+
+    - selector: olcf.s3m.slurm.v0042.SlurmIndirect.Ping
+      get: /api/slurm-indirect/v0.0.42/ping
+
+      ###
+
+    - selector: olcf.s3m.slurm.v0042.SlurmIndirect.GetReservations
+      get: /api/slurm-indirect/v0.0.42/reservations

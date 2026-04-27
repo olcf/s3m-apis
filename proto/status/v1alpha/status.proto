@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package olcf.s3m.status.v1alpha;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/olcf/s3m-apis/status/v1alpha;statuspb";
+
+//
+// API
+
+service Status {
+  rpc ListResources(google.protobuf.Empty) returns (Resources) {
+    option (google.api.http) = {
+      get: "/olcf/v1alpha/status"
+    };
+  }
+  rpc GetResource(GetResourceRequest) returns (Resource) {
+    option (google.api.http) = {
+      get: "/olcf/v1alpha/status/{resource_name}"
+    };
+  }
+
+  rpc ListDowntimesCurrent(google.protobuf.Empty) returns (Downtimes) {
+    option (google.api.http) = {
+      get: "/olcf/v1alpha/status/downtimes"
+    };
+  }
+  rpc ListDowntimesUpcoming(google.protobuf.Empty) returns (Downtimes) {
+    option (google.api.http) = {
+      get: "/olcf/v1alpha/status/downtimes/upcoming"
+    };
+  }
+}
+
+//
+// Messages
+
+message Resources {
+  repeated Resource resources = 1;
+}
+
+message Resource {
+  enum MachineStatus {
+    UNSPECIFIED = 0;
+    OPERATIONAL = 1;
+    UNAVAILABLE = 2;
+  }
+
+  string name = 1;
+  string description = 2;
+  string system_type = 3;
+  string security_enclave = 4;
+  string organization = 5;
+  MachineStatus status = 6;
+  map<string, string> annotations = 7;
+  bool downtime_schedule_available = 8;
+  repeated Downtime upcoming_downtimes = 9;
+  google.protobuf.Timestamp retrieved_at = 10;
+}
+
+message GetResourceRequest {
+  string resource_name = 1; // @gotags: validate:"required,genericString"
+}
+
+message Downtimes {
+  repeated Downtime downtimes = 1;
+}
+
+message Downtime {
+  enum MachineStatus {
+    UNSPECIFIED = 0;
+    UNAVAILABLE = 1;
+  }
+
+  string resource_name = 1;
+  MachineStatus status = 2;
+  google.protobuf.Timestamp start = 3;
+  google.protobuf.Timestamp end = 4;
+  string description = 5;
+  DowntimeAttributes attributes = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message DowntimeAttributes {
+  bool scheduled = 1;
+  bool reboot = 2;
+}

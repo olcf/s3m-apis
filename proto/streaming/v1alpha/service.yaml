@@ -1,0 +1,45 @@
+type: google.api.Service
+config_version: 3
+
+http:
+  rules:
+    - selector: olcf.s3m.streaming.v1alpha.Streaming.ListBackends
+      get: /list_backends
+
+      ###
+
+    - selector: olcf.s3m.streaming.v1alpha.RabbitMQStreaming.ProvisionRabbitMQCluster
+      post: /rabbitmq/provision_cluster
+      body: "*"
+
+    - selector: olcf.s3m.streaming.v1alpha.RabbitMQStreaming.ListRabbitMQClusters
+      get: /rabbitmq/list_clusters
+
+    - selector: olcf.s3m.streaming.v1alpha.RabbitMQStreaming.GetRabbitMQCluster
+      get: /rabbitmq/cluster/{name}
+
+    - selector: olcf.s3m.streaming.v1alpha.RabbitMQStreaming.DeleteRabbitMQCluster
+      delete: /rabbitmq/cluster/{name}
+
+    - selector: olcf.s3m.streaming.v1alpha.RabbitMQStreaming.ExtendRabbitMQClusterLife
+      post: /rabbitmq/extend/{name}
+      body: "*"
+
+      ###
+
+    - selector: olcf.s3m.streaming.v1alpha.RedisStreaming.ProvisionRedisCluster
+      post: /redis/provision_cluster
+      body: "*"
+
+    - selector: olcf.s3m.streaming.v1alpha.RedisStreaming.ListRedisClusters
+      get: /redis/list_clusters
+
+    - selector: olcf.s3m.streaming.v1alpha.RedisStreaming.GetRedisCluster
+      get: /redis/cluster/{name}
+
+    - selector: olcf.s3m.streaming.v1alpha.RedisStreaming.DeleteRedisCluster
+      delete: /redis/cluster/{name}
+
+    - selector: olcf.s3m.streaming.v1alpha.RedisStreaming.ExtendRedisClusterLife
+      post: /redis/extend/{name}
+      body: "*"

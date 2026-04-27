@@ -1,0 +1,152 @@
+syntax = "proto3";
+
+package olcf.s3m.storage.v1alpha;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/olcf/s3m-apis/storage/v1alpha;storagepb";
+
+//
+// API
+
+service BucketGateway {
+  // Reserve a named dataset and return presigned PUT URLs for specified paths.
+  rpc ReserveDataset(ReserveDatasetRequest) returns (ReserveDatasetResponse);
+
+  // Mark a dataset as ready after uploads complete.
+  rpc CommitDataset(CommitDatasetRequest) returns (CommitDatasetResponse);
+
+  // Tombstone a dataset and attempt deletion of backing objects.
+  rpc DeleteDataset(DeleteDatasetRequest) returns (DeleteDatasetResponse);
+
+  // List datasets within the caller's project.
+  rpc ListDatasets(ListDatasetsRequest) returns (ListDatasetsResponse);
+
+  // List files within a specific dataset.
+  rpc GetDatasetContents(GetDatasetContentsRequest) returns (GetDatasetContentsResponse);
+
+  // Retrieve presigned GET URLs for specified paths in a dataset.
+  rpc GetDownloadURLs(GetDownloadURLsRequest) returns (GetDownloadURLsResponse);
+}
+
+//
+// Messages
+
+message ReserveDatasetRequest {
+  string dataset_name   = 1; // @gotags: validate:"required,lte=128"
+  repeated string paths = 2; // @gotags: validate:"required,min=1,max=8192,dive,required,lte=1024"
+}
+
+message UploadTarget {
+  string path = 1;
+  string upload_url = 2; // @gotags: validate:"required,url"
+}
+
+message ReserveDatasetResponse {
+  repeated UploadTarget uploads = 1;
+  google.protobuf.Timestamp expires_at = 2;
+  string dataset_id   = 3; // @gotags: validate:"required,len=32"
+  string dataset_name = 4; // @gotags: validate:"required,lte=128"
+}
+
+message CommitDatasetRequest {
+  string dataset_id = 1; // @gotags: validate:"required,len=32"
+}
+
+message CommitDatasetResponse {}
+
+message DeleteDatasetRequest {
+  string dataset_id = 1; // @gotags: validate:"required,len=32"
+}
+
+message DeleteDatasetResponse {}
+
+message ListDatasetsRequest {
+  string prefix     = 1; // @gotags: validate:"omitempty,lte=128"
+  uint32 page_size  = 2; // @gotags: validate:"omitempty,gte=1,lte=512"
+  uint32 offset     = 3; // @gotags: validate:"omitempty,lte=8191"
+  string page_token = 4; // @gotags: validate:"omitempty,lte=1024"
+}
+
+message ListDatasetsResponse {
+  repeated DatasetSummary datasets = 1;
+  Pagination pagination = 2;
+}
+
+message DatasetSummary {
+  string dataset_id = 1;
+  string dataset_name = 2;
+  DatasetState state = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  int64 content_length = 6;
+}
+
+message DatasetSelector {
+  oneof selector {
+    string dataset_id                = 1; // @gotags: validate:"required,len=32"
+    DatasetNameSelector dataset_name = 2; // @gotags: validate:"required"
+  }
+}
+
+message DatasetNameSelector {
+  string name = 1; // @gotags: validate:"required,lte=128"
+  bool latest = 2;
+}
+
+message GetDatasetContentsRequest {
+  DatasetSelector selector = 1; // @gotags: validate:"required"
+
+  string path_prefix  = 2; // @gotags: validate:"omitempty,lte=1024"
+  string glob_pattern = 3; // @gotags: validate:"omitempty,lte=1024"
+
+  uint32 page_size  = 4; // @gotags: validate:"omitempty,gte=1,lte=512"
+  uint32 offset     = 5; // @gotags: validate:"omitempty,lte=8191"
+  string page_token = 6; // @gotags: validate:"omitempty,lte=1024"
+}
+
+message GetDatasetContentsResponse {
+  repeated FileEntry files = 1;
+  Pagination pagination = 2;
+}
+
+message FileEntry {
+  string path = 1;
+  int64 size = 2;
+  google.protobuf.Timestamp last_modified = 3;
+}
+
+message GetDownloadURLsRequest {
+  DatasetSelector selector = 1; // @gotags: validate:"required"
+  oneof path_filter {
+    PathList paths = 2;
+    string glob_pattern = 3; // @gotags: validate:"required,lte=1024"
+  }
+}
+
+message PathList {
+  repeated string paths = 1; // @gotags: validate:"required,min=1,max=8192,dive,required,lte=1024"
+}
+
+message DownloadTarget {
+  string path = 1;
+  string download_url = 2; // @gotags: validate:"required,url"
+}
+
+message GetDownloadURLsResponse {
+  repeated DownloadTarget downloads = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message Pagination {
+  uint32 next_offset = 1;
+  bool has_more = 2;
+  string next_page_token = 3;
+}
+
+enum DatasetState {
+  DATASET_STATE_UNSPECIFIED = 0;
+  DATASET_STATE_UPLOADING = 1;
+  DATASET_STATE_READY = 2;
+  DATASET_STATE_REMOVED = 3;
+}

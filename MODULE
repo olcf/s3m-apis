@@ -1,0 +1,6 @@
+MODULE=s3m-apis
+VERSION=0.3.4
+FLATTEN_NAMESPACES=olcf.s3m
+GO_PACKAGE=github.com/olcf/s3m-apis
+PY_PACKAGE=s3m_apis_grpcio
+PYB_PACKAGE=s3m_apis_betterproto

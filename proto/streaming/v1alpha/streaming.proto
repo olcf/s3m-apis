@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package olcf.s3m.streaming.v1alpha;
+
+import "google/api/annotations.proto";
+import "proto/streaming/v1alpha/common.proto";
+import "proto/streaming/v1alpha/rabbitmq.proto";
+import "proto/streaming/v1alpha/redis.proto";
+
+option go_package = "github.com/olcf/s3m-apis/streaming/v1alpha;streamingpb";
+
+//
+// API
+
+service Streaming {
+  rpc ListBackends(ListBackendsRequest) returns (ListBackendsResponse) {
+    option (google.api.http) = {
+      get: "/olcf/v1alpha/streaming/list_backends"
+    };
+  }
+}
+
+service RabbitMQStreaming {
+  rpc ProvisionRabbitMQCluster(ProvisionRabbitMQClusterRequest) returns (ProvisionRabbitMQClusterResponse) {
+    option (google.api.http) = {
+      post: "/olcf/v1alpha/streaming/rabbitmq/provision_cluster"
+      body: "*"
+    };
+  }
+  rpc ListRabbitMQClusters(ListRabbitMQClustersRequest) returns (ListRabbitMQClustersResponse) {
+    option (google.api.http) = {
+      get: "/olcf/v1alpha/streaming/rabbitmq/list_clusters"
+    };
+  }
+  rpc GetRabbitMQCluster(GetRabbitMQClusterRequest) returns (GetRabbitMQClusterResponse) {
+    option (google.api.http) = {
+      get: "/olcf/v1alpha/streaming/rabbitmq/cluster/{name}"
+    };
+  }
+  rpc DeleteRabbitMQCluster(DeleteRabbitMQClusterRequest) returns (DeleteRabbitMQClusterResponse) {
+    option (google.api.http) = {
+      delete: "/olcf/v1alpha/streaming/rabbitmq/cluster/{name}"
+    };
+  }
+  rpc ExtendRabbitMQClusterLife(ExtendRabbitMQClusterLifeRequest) returns (ExtendRabbitMQClusterLifeResponse) {
+    option (google.api.http) = {
+      post: "/olcf/v1alpha/streaming/rabbitmq/extend/{name}"
+    };
+  }
+}
+
+service RedisStreaming {
+  rpc ProvisionRedisCluster(ProvisionRedisClusterRequest) returns (ProvisionRedisClusterResponse) {
+    option (google.api.http) = {
+      post: "/olcf/v1alpha/streaming/redis/provision_cluster"
+      body: "*"
+    };
+  }
+  rpc ListRedisClusters(ListRedisClustersRequest) returns (ListRedisClustersResponse) {
+    option (google.api.http) = {
+      get: "/olcf/v1alpha/streaming/redis/list_clusters"
+    };
+  }
+  rpc GetRedisCluster(GetRedisClusterRequest) returns (GetRedisClusterResponse) {
+    option (google.api.http) = {
+      get: "/olcf/v1alpha/streaming/redis/cluster/{name}"
+    };
+  }
+  rpc DeleteRedisCluster(DeleteRedisClusterRequest) returns (DeleteRedisClusterResponse) {
+    option (google.api.http) = {
+      delete: "/olcf/v1alpha/streaming/redis/cluster/{name}"
+    };
+  }
+  rpc ExtendRedisClusterLife(ExtendRedisClusterLifeRequest) returns (ExtendRedisClusterLifeResponse) {
+    option (google.api.http) = {
+      post: "/olcf/v1alpha/streaming/redis/extend/{name}"
+    };
+  }
+}
+
+//
+// Messages
+
+message ListBackendsRequest {}
+
+message ListBackendsResponse {
+  repeated Backend backends = 1;
+}
+
+message Backend {
+  string engine = 1;
+  string kind = 2;
+  string description = 3;
+  repeated BackendResourceOption resource_options = 4;
+  repeated BackendFeatureFlag feature_flags = 5;
+}

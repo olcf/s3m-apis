@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package olcf.s3m.streaming.v1alpha;
+
+import "proto/streaming/v1alpha/common.proto";
+
+option go_package = "github.com/olcf/s3m-apis/streaming/v1alpha;streamingpb";
+
+//
+// Cluster state
+
+message RabbitMQClusterSummary {
+  string kind = 1;
+  string name = 2;
+  string sync_status = 3;
+  string health_status = 4;
+
+  Lifetime lifetime = 5;
+}
+
+message RabbitMQCluster {
+  string kind = 1;
+  string name = 2;
+  string sync_status = 3;
+  string health_status = 4;
+
+  Lifetime lifetime = 5;
+
+  map<string, int32> resource_settings = 6;
+
+  optional string username = 7;
+  optional string password = 8;
+
+  optional string amqps_url = 9;
+  optional string mgmt_url = 10;
+
+  map<string, bool> feature_flags = 11;
+}
+
+//
+// Cluster operations
+
+message ProvisionRabbitMQClusterRequest {
+  string kind                          = 1; // @gotags: validate:"required"
+  string name                          = 2; // @gotags: validate:"required,max=40,hostname_rfc1123"
+  map<string, int32> resource_settings = 3; // @gotags: validate:"dive,keys,endkeys,gt=0"
+
+  map<string, bool> feature_flags = 4;
+}
+
+message ProvisionRabbitMQClusterResponse {
+  string username = 1;
+  string password = 2;
+  string amqps_url = 3;
+  string mgmt_url = 4;
+}
+
+message ListRabbitMQClustersRequest {}
+
+message ListRabbitMQClustersResponse {
+  repeated RabbitMQClusterSummary clusters = 1;
+}
+
+message GetRabbitMQClusterRequest {
+  string name = 1; // @gotags: validate:"required,max=40,hostname_rfc1123"
+}
+
+message GetRabbitMQClusterResponse {
+  RabbitMQCluster cluster = 1;
+}
+
+message DeleteRabbitMQClusterRequest {
+  string name = 1; // @gotags: validate:"required,max=40,hostname_rfc1123"
+}
+
+message DeleteRabbitMQClusterResponse {
+  bool success = 1;
+}
+
+message ExtendRabbitMQClusterLifeRequest {
+  string name = 1; // @gotags: validate:"required,max=40,hostname_rfc1123"
+}
+
+message ExtendRabbitMQClusterLifeResponse {
+  Lifetime lifetime = 1;
+}

@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package olcf.s3m.tms.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/olcf/s3m-apis/tms/v1;tmspb";
+
+//
+// API
+
+// The TokenControl service allows for a supplied token (auth header/metadata) to perform
+// limited actions on itself or retrieve additional details.
+service TokenControl {
+  rpc IntrospectAuthToken(IntrospectAuthTokenRequest) returns (IntrospectAuthTokenResponse) {
+    option (google.api.http) = {
+      get: "/olcf/v1/token/ctls/introspect"
+    };
+  }
+  rpc RevokeAuthToken(RevokeAuthTokenRequest) returns (RevokeAuthTokenResponse) {
+    option (google.api.http) = {
+      delete: "/olcf/v1/token/ctls/revoke"
+    };
+  }
+}
+
+//
+// Messages
+
+message IntrospectAuthTokenRequest {
+  bool grpc_permissions = 1;
+}
+
+message IntrospectAuthTokenResponse {
+  TokenDetailsIntrospective token = 1;
+}
+
+message RevokeAuthTokenRequest {}
+
+message RevokeAuthTokenResponse {}
+
+message TokenDetailsIntrospective {
+  string username = 1;
+  string project = 2;
+  repeated string permissions = 3;
+  google.protobuf.Timestamp planned_expiration = 4;
+  string security_enclave = 5;
+  string description = 6;
+  bool one_time_token = 7;
+  bool delayed_start = 8;
+  google.protobuf.Timestamp delay_date = 9;
+  string owner_name = 10;
+  repeated GRPCPermissions grpc_permissions = 11;
+  int32 extensions = 12;
+}
+
+message GRPCPermissions {
+  string path = 1;
+  string permission = 2;
+}

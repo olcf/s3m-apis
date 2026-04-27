@@ -1,0 +1,10 @@
+type: google.api.Service
+config_version: 3
+
+http:
+  rules:
+    - selector: olcf.s3m.tms.v1.TokenControl.IntrospectAuthToken
+      get: /api/v1/ctls/introspect
+
+    - selector: olcf.s3m.tms.v1.TokenControl.RevokeAuthToken
+      delete: /api/v1/ctls/revoke

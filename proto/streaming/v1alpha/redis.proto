@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package olcf.s3m.streaming.v1alpha;
+
+import "proto/streaming/v1alpha/common.proto";
+
+option go_package = "github.com/olcf/s3m-apis/streaming/v1alpha;streamingpb";
+
+//
+// Cluster state
+
+message RedisClusterSummary {
+  string kind = 1;
+  string name = 2;
+  string sync_status = 3;
+  string health_status = 4;
+
+  Lifetime lifetime = 5;
+}
+
+message RedisCluster {
+  string kind = 1;
+  string name = 2;
+  string sync_status = 3;
+  string health_status = 4;
+
+  Lifetime lifetime = 5;
+
+  map<string, int32> resource_settings = 6;
+
+  optional string username = 7;
+  optional string password = 8;
+
+  optional string redis_url = 9;
+
+  map<string, bool> feature_flags = 10;
+}
+
+//
+// Cluster operations
+
+message ProvisionRedisClusterRequest {
+  string kind                          = 1; // @gotags: validate:"required"
+  string name                          = 2; // @gotags: validate:"required,max=40,hostname_rfc1123"
+  map<string, int32> resource_settings = 3; // @gotags: validate:"dive,keys,endkeys,gt=0"
+
+  map<string, bool> feature_flags = 4;
+}
+
+message ProvisionRedisClusterResponse {
+  string username = 1;
+  string password = 2;
+  string url = 3;
+}
+
+message ListRedisClustersRequest {}
+
+message ListRedisClustersResponse {
+  repeated RedisClusterSummary clusters = 1;
+}
+
+message GetRedisClusterRequest {
+  string name = 1; // @gotags: validate:"required,max=40,hostname_rfc1123"
+}
+
+message GetRedisClusterResponse {
+  RedisCluster cluster = 1;
+}
+
+message DeleteRedisClusterRequest {
+  string name = 1; // @gotags: validate:"required,max=40,hostname_rfc1123"
+}
+
+message DeleteRedisClusterResponse {
+  bool success = 1;
+}
+
+message ExtendRedisClusterLifeRequest {
+  string name = 1; // @gotags: validate:"required,max=40,hostname_rfc1123"
+}
+
+message ExtendRedisClusterLifeResponse {
+  Lifetime lifetime = 1;
+}

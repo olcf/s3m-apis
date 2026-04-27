@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package olcf.s3m.common.v1alpha;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/olcf/s3m-apis/common/v1alpha;commonpb";
+
+// Applies HeaderParams to a single RPC method in a service.
+extend google.protobuf.MethodOptions {
+  repeated HeaderParam method_header_param = 151236;
+}
+
+// Applies HeaderParams to all RPC methods in a service.
+extend google.protobuf.ServiceOptions {
+  repeated HeaderParam service_header_param = 151237;
+}
+
+// Indicates that a HTTP header is available and optionally required
+// for methods, and describes a friendly name for that parameter.
+message HeaderParam {
+  string header = 1;
+  string param_name = 2;
+  bool required = 3;
+}

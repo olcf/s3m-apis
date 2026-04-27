@@ -1,0 +1,984 @@
+syntax = "proto3";
+
+package olcf.s3m.slurm.v0044;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "proto/common/v1alpha/headers.proto";
+
+option go_package = "github.com/olcf/s3m-apis/slurm/v0044;slurmv0044pb";
+
+//
+// API
+
+service SlurmIndirect {
+  option (common.v1alpha.service_header_param) = {
+    header: "olcf-resource"
+    param_name: "compute_resource"
+    required: true
+  };
+
+  rpc Ping(google.protobuf.Empty) returns (PingResp) {
+    option (google.api.http) = {
+      get: "/slurm/v0.0.44/ping"
+    };
+  }
+  rpc GetDiag(google.protobuf.Empty) returns (DiagResp) {
+    option (google.api.http) = {
+      get: "/slurm/v0.0.44/diag"
+    };
+  }
+  rpc GetJob(JobIdReq) returns (JobIdResp) {
+    option (google.api.http) = {
+      get: "/slurm/v0.0.44/job/{job_id}"
+    };
+  }
+  rpc GetJobs(google.protobuf.Empty) returns (JobsResp) {
+    option (google.api.http) = {
+      get: "/slurm/v0.0.44/jobs"
+    };
+  }
+  rpc PostJobSubmit(JobSubmitReq) returns (JobSubmitResp) {
+    option (google.api.http) = {
+      post: "/slurm/v0.0.44/job/submit"
+      body: "*"
+    };
+    option (common.v1alpha.method_header_param) = {
+      header: "x-s3m-withstorage"
+      param_name: "with_storage"
+      required: false
+    };
+  }
+  rpc DeleteJob(DeleteJobReq) returns (DeleteJobResp) {
+    option (google.api.http) = {
+      delete: "/slurm/v0.0.44/job/{job_id}"
+    };
+  }
+  rpc GetNodes(google.protobuf.Empty) returns (NodesResp) {
+    option (google.api.http) = {
+      get: "/slurm/v0.0.44/nodes"
+    };
+  }
+  rpc GetPartitions(google.protobuf.Empty) returns (PartitionsResp) {
+    option (google.api.http) = {
+      get: "/slurm/v0.0.44/partitions"
+    };
+  }
+  rpc GetReservations(google.protobuf.Empty) returns (ReservationsResp) {
+    option (google.api.http) = {
+      get: "/slurm/v0.0.44/reservations"
+    };
+  }
+}
+
+//
+// Shared messages
+
+message ErrorResp {
+  int32 error_number = 1 [json_name = "error_number"];
+  string error = 2;
+  string source = 3;
+  string description = 4;
+}
+
+message WarningResp {
+  string warning = 1;
+  string source = 2;
+  string description = 3;
+}
+
+message Int32NoVal {
+  bool set = 1;
+  bool infinite = 2;
+  int32 number = 3;
+}
+
+message Int64NoVal {
+  bool set = 1;
+  bool infinite = 2;
+  int64 number = 3;
+}
+
+message Uint16NoVal {
+  bool set = 1;
+  bool infinite = 2;
+  uint32 number = 3;
+}
+
+message Uint32NoVal {
+  bool set = 1;
+  bool infinite = 2;
+  uint32 number = 3;
+}
+
+message Uint64NoVal {
+  bool set = 1;
+  bool infinite = 2;
+  uint64 number = 3;
+}
+
+message Float32NoVal {
+  bool set = 1;
+  bool infinite = 2;
+  float number = 3;
+}
+
+message Float64NoVal {
+  bool set = 1;
+  bool infinite = 2;
+  double number = 3;
+}
+
+message ExitCode {
+  repeated string status = 1;
+  Uint32NoVal return_code = 2 [json_name = "return_code"];
+  Signal signal = 3;
+}
+
+message Signal {
+  Uint32NoVal id = 1;
+  string name = 2;
+}
+
+message ProcessSignalVerbose {
+  Uint16NoVal id = 1;
+  string name = 2;
+}
+
+message ProcessExitCodeVerbose {
+  repeated string status = 1;
+  Uint32NoVal return_code = 2 [json_name = "return_code"];
+  ProcessSignalVerbose signal = 3;
+}
+
+//
+// Metadata
+
+message MetaResp {
+  MetaPluginResp plugin = 1;
+  MetaSlurmResp slurm = 2;
+  MetaClientResp client = 3;
+}
+
+message MetaPluginResp {
+  string type = 1;
+  string name = 2;
+  string data_parser = 3 [json_name = "data_parser"];
+}
+
+message MetaSlurmResp {
+  MetaSlurmVersionResp version = 1;
+  string release = 2;
+}
+
+message MetaSlurmVersionResp {
+  string major = 1;
+  string minor = 2;
+  string micro = 3;
+}
+
+message MetaClientResp {
+  string source = 1;
+}
+
+//
+// Diagnostic details
+
+message DiagResp {
+  MetaResp meta = 1;
+  repeated ErrorResp errors = 2;
+  repeated WarningResp warnings = 3;
+  DiagStatistics statistics = 4;
+}
+
+message DiagStatistics {
+  int32 parts_packed = 1 [json_name = "parts_packed"];
+  Uint64NoVal req_time = 2 [json_name = "req_time"];
+  Uint64NoVal req_time_start = 3 [json_name = "req_time_start"];
+  int32 server_thread_count = 4 [json_name = "server_thread_count"];
+  int32 agent_queue_size = 5 [json_name = "agent_queue_size"];
+  int32 agent_count = 6 [json_name = "agent_count"];
+  int32 agent_thread_count = 7 [json_name = "agent_thread_count"];
+  int32 dbd_agent_queue_size = 8 [json_name = "dbd_agent_queue_size"];
+  int32 gettimeofday_latency = 9 [json_name = "gettimeofday_latency"];
+  int32 schedule_cycle_max = 10 [json_name = "schedule_cycle_max"];
+  int32 schedule_cycle_last = 11 [json_name = "schedule_cycle_last"];
+  int32 schedule_cycle_total = 12 [json_name = "schedule_cycle_total"];
+  int64 schedule_cycle_mean = 13 [json_name = "schedule_cycle_mean"];
+  int64 schedule_cycle_mean_depth = 14 [json_name = "schedule_cycle_mean_depth"];
+  int64 schedule_cycle_per_minute = 15 [json_name = "schedule_cycle_per_minute"];
+  DiagScheduleExit schedule_exit = 16 [json_name = "schedule_exit"];
+  int32 schedule_queue_length = 17 [json_name = "schedule_queue_length"];
+  int32 jobs_submitted = 18 [json_name = "jobs_submitted"];
+  int32 jobs_started = 19 [json_name = "jobs_started"];
+  int32 jobs_completed = 20 [json_name = "jobs_completed"];
+  int32 jobs_canceled = 21 [json_name = "jobs_canceled"];
+  int32 jobs_failed = 22 [json_name = "jobs_failed"];
+  int32 jobs_pending = 23 [json_name = "jobs_pending"];
+  int32 jobs_running = 24 [json_name = "jobs_running"];
+  Uint64NoVal job_states_ts = 25 [json_name = "job_states_ts"];
+  int32 bf_backfilled_jobs = 26 [json_name = "bf_backfilled_jobs"];
+  int32 bf_last_backfilled_jobs = 27 [json_name = "bf_last_backfilled_jobs"];
+  int32 bf_backfilled_het_jobs = 28 [json_name = "bf_backfilled_het_jobs"];
+  int32 bf_cycle_counter = 29 [json_name = "bf_cycle_counter"];
+  int64 bf_cycle_mean = 30 [json_name = "bf_cycle_mean"];
+  int64 bf_depth_mean = 31 [json_name = "bf_depth_mean"];
+  int64 bf_depth_mean_try = 32 [json_name = "bf_depth_mean_try"];
+  int64 bf_cycle_sum = 33 [json_name = "bf_cycle_sum"];
+  int32 bf_cycle_last = 34 [json_name = "bf_cycle_last"];
+  int32 bf_last_depth = 35 [json_name = "bf_last_depth"];
+  int32 bf_last_depth_try = 36 [json_name = "bf_last_depth_try"];
+  int32 bf_depth_sum = 37 [json_name = "bf_depth_sum"];
+  int32 bf_depth_try_sum = 38 [json_name = "bf_depth_try_sum"];
+  int32 bf_queue_len = 39 [json_name = "bf_queue_len"];
+  int64 bf_queue_len_mean = 40 [json_name = "bf_queue_len_mean"];
+  int32 bf_queue_len_sum = 41 [json_name = "bf_queue_len_sum"];
+  int32 bf_table_size = 42 [json_name = "bf_table_size"];
+  int64 bf_table_size_mean = 43 [json_name = "bf_table_size_mean"];
+  Uint64NoVal bf_when_last_cycle = 44 [json_name = "bf_when_last_cycle"];
+  bool bf_active = 45 [json_name = "bf_active"];
+  int32 schedule_cycle_sum = 46 [json_name = "schedule_cycle_sum"];
+  int32 schedule_cycle_depth = 47 [json_name = "schedule_cycle_depth"];
+  int32 bf_table_size_sum = 48 [json_name = "bf_table_size_sum"];
+
+  repeated DiagRPCSMessage rpcs_by_message_type = 50 [json_name = "rpcs_by_message_type"];
+  repeated DiagRPCSUser rpcs_by_user = 51 [json_name = "rpcs_by_user"];
+  DiagBFExit bf_exit = 52 [json_name = "bf_exit"];
+}
+
+message DiagRPCSMessage {
+  string message_type = 1 [json_name = "message_type"];
+  int32 type_id = 2 [json_name = "type_id"];
+  int32 count = 3;
+  Uint64NoVal average_time = 4 [json_name = "average_time"];
+  int64 total_time = 5 [json_name = "total_time"];
+  int64 dropped = 6;
+  int32 cycle_max = 7 [json_name = "cycle_max"];
+  int32 cycle_last = 8 [json_name = "cycle_last"];
+  int32 queued = 9;
+}
+
+message DiagRPCSUser {
+  int32 user_id = 1 [json_name = "user_id"];
+  string user = 2;
+  int32 count = 3;
+  int64 total_time = 4 [json_name = "total_time"];
+  Uint64NoVal average_time = 5 [json_name = "average_time"];
+}
+
+message DiagScheduleExit {
+  int32 end_job_queue = 1 [json_name = "end_job_queue"];
+  int32 default_queue_depth = 2 [json_name = "default_queue_depth"];
+  int32 max_job_start = 3 [json_name = "max_job_start"];
+  int32 max_rpc_cnt = 4 [json_name = "max_rpc_cnt"];
+  int32 max_sched_time = 5 [json_name = "max_sched_time"];
+  int32 licenses = 6;
+}
+
+message DiagBFExit {
+  int32 end_job_queue = 1 [json_name = "end_job_queue"];
+  int32 bf_max_job_start = 2 [json_name = "bf_max_job_start"];
+  int32 bf_max_job_test = 3 [json_name = "bf_max_job_test"];
+  int32 bf_max_time = 4 [json_name = "bf_max_time"];
+  int32 bf_node_space_size = 5 [json_name = "bf_node_space_size"];
+  int32 state_changed = 6 [json_name = "state_changed"];
+}
+
+//
+// Get jobs
+
+// /slurm and /slurmdb have slight variations between
+// their job outputs, therefore we have two different
+// messages for each
+
+message JobsResp {
+  MetaResp meta = 1;
+  repeated ErrorResp errors = 2;
+  repeated WarningResp warnings = 3;
+  repeated SlurmJobDescription jobs = 4;
+  Uint64NoVal last_backfill = 5 [json_name = "last_backfill"];
+  Uint64NoVal last_update = 6 [json_name = "last_update"];
+}
+
+message SlurmJobDescription {
+  message Resources {
+    message Nodes {
+      int32 count = 1;
+      string list = 2;
+      bool whole = 3;
+      repeated string select_type = 4 [json_name = "select_type"];
+    }
+
+    repeated string select_type = 1 [json_name = "select_type"];
+    uint32 cpus = 2;
+    Uint32NoVal threads_per_core = 3 [json_name = "threads_per_core"];
+    Nodes nodes = 4;
+  }
+
+  string account = 1;
+  Uint64NoVal accrue_time = 2 [json_name = "accrue_time"];
+  string admin_comment = 3 [json_name = "admin_comment"];
+  string allocating_node = 4 [json_name = "allocating_node"];
+  Uint32NoVal array_job_id = 5 [json_name = "array_job_id"];
+  Uint32NoVal array_task_id = 6 [json_name = "array_task_id"];
+  Uint32NoVal array_max_tasks = 7 [json_name = "array_max_tasks"];
+  string array_task_string = 8 [json_name = "array_task_string"];
+  int32 association_id = 9 [json_name = "association_id"];
+  string batch_features = 10 [json_name = "batch_features"];
+  bool batch_flag = 11 [json_name = "batch_flag"];
+  string batch_host = 12 [json_name = "batch_host"];
+  repeated string flags = 13;
+  string burst_buffer = 14 [json_name = "burst_buffer"];
+  string burst_buffer_state = 15 [json_name = "burst_buffer_state"];
+  string cluster = 16;
+  string cluster_features = 17 [json_name = "cluster_features"];
+  string command = 18;
+  string comment = 19;
+  string container = 20;
+  string container_id = 21 [json_name = "container_id"];
+  bool contiguous = 22;
+  int32 core_spec = 23 [json_name = "core_spec"];
+  int32 thread_spec = 24 [json_name = "thread_spec"];
+  Uint32NoVal cores_per_socket = 25 [json_name = "cores_per_socket"];
+  Float64NoVal billable_tres = 26 [json_name = "billable_tres"];
+  Uint32NoVal cpus_per_task = 27 [json_name = "cpus_per_task"];
+  Uint32NoVal cpu_frequency_minimum = 28 [json_name = "cpu_frequency_minimum"];
+  Uint32NoVal cpu_frequency_maximum = 29 [json_name = "cpu_frequency_maximum"];
+  Uint32NoVal cpu_frequency_governor = 30 [json_name = "cpu_frequency_governor"];
+  string cpus_per_tres = 31 [json_name = "cpus_per_tres"];
+  string cron = 32;
+  Uint64NoVal deadline = 33;
+  Uint32NoVal delay_boot = 34 [json_name = "delay_boot"];
+  string dependency = 35;
+  ExitCode derived_exit_code = 36 [json_name = "derived_exit_code"];
+  Uint64NoVal eligible_time = 37 [json_name = "eligible_time"];
+  Uint64NoVal end_time = 38 [json_name = "end_time"];
+  string excluded_nodes = 39 [json_name = "excluded_nodes"];
+  ExitCode exit_code = 40 [json_name = "exit_code"];
+  string extra = 41;
+  string failed_node = 42 [json_name = "failed_node"];
+  string features = 43;
+  string federation_origin = 44 [json_name = "federation_origin"];
+  string federation_siblings_active = 45 [json_name = "federation_siblings_active"];
+  string federation_siblings_viable = 46 [json_name = "federation_siblings_viable"];
+  repeated string gres_detail = 47 [json_name = "gres_detail"];
+  uint32 group_id = 48 [json_name = "group_id"];
+  string group_name = 49 [json_name = "group_name"];
+  Uint32NoVal het_job_id = 50 [json_name = "het_job_id"];
+  string het_job_id_set = 51 [json_name = "het_job_id_set"];
+  Uint32NoVal het_job_offset = 52 [json_name = "het_job_offset"];
+  uint32 job_id = 53 [json_name = "job_id"];
+  Resources job_resources = 54 [json_name = "job_resources"];
+  repeated string job_size_str = 55 [json_name = "job_size_str"];
+  repeated string job_state = 56 [json_name = "job_state"];
+  Uint64NoVal last_sched_evaluation = 57 [json_name = "last_sched_evaluation"];
+  string licenses = 58;
+  repeated string mail_type = 59 [json_name = "mail_type"];
+  string mail_user = 60 [json_name = "mail_user"];
+  Uint32NoVal max_cpus = 61 [json_name = "max_cpus"];
+  Uint32NoVal max_nodes = 62 [json_name = "max_nodes"];
+  string mcs_label = 63 [json_name = "mcs_label"];
+  string memory_per_tres = 64 [json_name = "memory_per_tres"];
+  string name = 65;
+  string network = 66;
+  string nodes = 67;
+  int32 nice = 68;
+  Uint32NoVal tasks_per_core = 69 [json_name = "tasks_per_core"];
+  Uint32NoVal tasks_per_tres = 70 [json_name = "tasks_per_tres"];
+  Uint32NoVal tasks_per_node = 71 [json_name = "tasks_per_node"];
+  Uint32NoVal tasks_per_socket = 72 [json_name = "tasks_per_socket"];
+  Uint32NoVal tasks_per_board = 73 [json_name = "tasks_per_board"];
+  Uint32NoVal cpus = 74;
+  Uint32NoVal node_count = 75 [json_name = "node_count"];
+  Uint32NoVal tasks = 76;
+  string partition = 77;
+  string prefer = 78;
+  Uint64NoVal memory_per_cpu = 79 [json_name = "memory_per_cpu"];
+  Uint64NoVal memory_per_node = 80 [json_name = "memory_per_node"];
+  Uint32NoVal minimum_cpus_per_node = 81 [json_name = "minimum_cpus_per_node"];
+  Uint32NoVal minimum_tmp_disk_per_node = 82 [json_name = "minimum_tmp_disk_per_node"];
+  Uint64NoVal preempt_time = 83 [json_name = "preempt_time"];
+  Uint64NoVal preemptable_time = 84 [json_name = "preemptable_time"];
+  Uint64NoVal pre_sus_time = 85 [json_name = "pre_sus_time"];
+  bool hold = 86;
+  Uint32NoVal priority = 87;
+  repeated string profile = 89;
+  string qos = 90;
+  bool reboot = 91;
+  string required_nodes = 92 [json_name = "required_nodes"];
+  int32 required_switches = 93 [json_name = "required_switches"];
+  bool requeue = 94;
+  Uint64NoVal resize_time = 95 [json_name = "resize_time"];
+  int32 restart_cnt = 96 [json_name = "restart_cnt"];
+  string resv_name = 97 [json_name = "resv_name"];
+  string scheduled_nodes = 98 [json_name = "scheduled_nodes"];
+  string selinux_context = 99 [json_name = "selinux_context"];
+  repeated string shared = 100;
+  int32 sockets_per_board = 101 [json_name = "sockets_per_board"];
+  Uint32NoVal sockets_per_node = 102 [json_name = "sockets_per_node"];
+  Uint64NoVal start_time = 103 [json_name = "start_time"];
+  string state_description = 104 [json_name = "state_description"];
+  string state_reason = 105 [json_name = "state_reason"];
+  string standard_error = 106 [json_name = "standard_error"];
+  string standard_input = 107 [json_name = "standard_input"];
+  string standard_output = 108 [json_name = "standard_output"];
+  Uint64NoVal submit_time = 109 [json_name = "submit_time"];
+  Uint64NoVal suspend_time = 110 [json_name = "suspend_time"];
+  string system_comment = 111 [json_name = "system_comment"];
+  Uint32NoVal time_limit = 112 [json_name = "time_limit"];
+  Uint32NoVal time_minimum = 113 [json_name = "time_minimum"];
+  Uint32NoVal threads_per_core = 114 [json_name = "threads_per_core"];
+  string tres_bind = 115 [json_name = "tres_bind"];
+  string tres_per_job = 116 [json_name = "tres_per_job"];
+  string tres_per_node = 117 [json_name = "tres_per_node"];
+  string tres_per_socket = 118 [json_name = "tres_per_socket"];
+  string tres_per_task = 119 [json_name = "tres_per_task"];
+  string tres_req_str = 120 [json_name = "tres_req_str"];
+  string tres_alloc_str = 121 [json_name = "tres_alloc_str"];
+  uint32 user_id = 122 [json_name = "user_id"];
+  string user_name = 123 [json_name = "user_name"];
+  int32 maximum_switch_wait_time = 124 [json_name = "maximum_switch_wait_time"];
+  string wckey = 125;
+  string current_working_directory = 126 [json_name = "current_working_directory"];
+}
+
+//
+// Get job
+
+// /job/{job_id} returns an array of jobs
+// filtered by provided job_id, resulting in an
+// array of one job entry when a matching job is found.
+// If multiple clusters were on the same slurm instance
+// /job/{job_id} could return multiple jobs but that is
+// not how our systems are setup
+
+message JobIdReq {
+  string job_id = 1 [json_name = "job_id"]; // @gotags: validate:"numeric,gt=0,lt=10"
+}
+
+message JobIdResp {
+  MetaResp meta = 1;
+  repeated ErrorResp errors = 2;
+  repeated WarningResp warnings = 3;
+  repeated SlurmDBJobDescription jobs = 4;
+}
+
+message SlurmDBJobDescription {
+  message Array {
+    message Limits {
+      message Max {
+        message Running {
+          int32 tasks = 1;
+        }
+
+        Running running = 1;
+      }
+
+      Max max = 1;
+    }
+
+    int32 job_id = 1 [json_name = "job_id"];
+    Uint32NoVal task_id = 2 [json_name = "task_id"];
+    string task = 3;
+    Limits limits = 4;
+  }
+
+  message Association {
+    string account = 1;
+    string cluster = 2;
+    string partition = 3;
+    string user = 4;
+    int32 id = 5;
+  }
+
+  message Comment {
+    string administrator = 1;
+    string job = 2;
+    string system = 3;
+  }
+
+  message HET {
+    int32 job_id = 1 [json_name = "job_id"];
+    Uint32NoVal job_offset = 2 [json_name = "job_offset"];
+  }
+
+  message Time {
+    int32 elapsed = 1;
+    int64 start = 2;
+    int64 end = 3;
+    int32 suspended = 4;
+    Uint64NoVal planned = 5;
+  }
+
+  message Required {
+    int32 CPUs = 1 [json_name = "CPUs"];
+    Uint64NoVal memory_per_cpu = 2 [json_name = "memory_per_cpu"];
+    Uint64NoVal memory_per_node = 3 [json_name = "memory_per_node"];
+  }
+
+  message Reservation {
+    int32 id = 1;
+    string name = 2;
+  }
+
+  message State {
+    repeated string current = 1;
+    string reason = 2;
+  }
+
+  message Step {
+    message Nodes {
+      int32 count = 1;
+      string range = 2;
+      repeated string list = 3;
+    }
+
+    message Tasks {
+      int32 count = 1;
+    }
+
+    message CPU {
+      message RequestedFrequency {
+        Uint32NoVal min = 1;
+        Uint32NoVal max = 2;
+      }
+
+      RequestedFrequency requested_frequency = 1 [json_name = "requested_frequency"];
+      string governor = 2;
+    }
+
+    message StepInfo {
+      string id = 1;
+      string name = 2;
+    }
+
+    message Task {
+      string distribution = 1;
+    }
+
+    message StepTime {
+      int32 elapsed = 1;
+      Uint64NoVal end = 2;
+      Uint64NoVal start = 3;
+      int32 suspended = 4;
+    }
+
+    StepTime time = 1;
+    ProcessExitCodeVerbose exit_code = 2 [json_name = "exit_code"];
+    Nodes nodes = 3;
+    Tasks tasks = 4;
+    CPU cpu = 5 [json_name = "CPU"];
+    string kill_request_user = 6 [json_name = "kill_request_user"];
+    repeated string state = 7;
+    StepInfo step = 8 [json_name = "step"];
+    Task task = 9;
+  }
+
+  string account = 1;
+  Comment comment = 2;
+  int32 allocation_nodes = 3 [json_name = "allocation_nodes"];
+  Array array = 4;
+  Association association = 5;
+  string block = 6;
+  string cluster = 7;
+  string constraints = 8;
+  string container = 9;
+  ProcessExitCodeVerbose derived_exit_code = 10 [json_name = "derived_exit_code"];
+  Time time = 11;
+  ProcessExitCodeVerbose exit_code = 12 [json_name = "exit_code"];
+  string extra = 13;
+  string failed_node = 14 [json_name = "failed_node"];
+  repeated string flags = 15;
+  string group = 16;
+  HET het = 17;
+  int32 job_id = 18 [json_name = "job_id"];
+  string name = 19;
+  string licenses = 20;
+  string nodes = 21;
+  string partition = 22;
+  bool hold = 23;
+  Uint32NoVal priority = 24;
+  string qos = 25;
+  string qosreq = 26;
+  Required required = 27;
+  string kill_request_user = 28 [json_name = "kill_request_user"];
+  int32 restart_cnt = 29 [json_name = "restart_cnt"];
+  Reservation reservation = 30;
+  string script = 31;
+  string stdin_expanded = 32 [json_name = "stdin_expanded"];
+  string stdout_expanded = 33 [json_name = "stdout_expanded"];
+  string stderr_expanded = 34 [json_name = "stderr_expanded"];
+  string stdout = 35;
+  string stderr = 36;
+  string stdin = 37;
+  State state = 38;
+  repeated Step steps = 39;
+  string submit_line = 40 [json_name = "submit_line"];
+  string used_gres = 42 [json_name = "used_gres"];
+  string user = 43;
+  string working_directory = 45 [json_name = "working_directory"];
+}
+
+//
+// Post job submit
+
+message JobSubmitReq {
+  message JobDescription {
+    message Crontab {
+      string minute = 1;
+      string hour = 2;
+      string day_of_month = 3 [json_name = "day_of_month"];
+      string month = 4;
+      string day_of_week = 5 [json_name = "day_of_week"];
+      string specification = 6;
+      string command = 7;
+    }
+
+    message RLimits {
+      Uint64NoVal cpu = 1;
+      Uint64NoVal fsize = 2;
+      Uint64NoVal data = 3;
+      Uint64NoVal stack = 4;
+      Uint64NoVal core = 5;
+      Uint64NoVal rss = 6;
+      Uint64NoVal nproc = 7;
+      Uint64NoVal nofile = 8;
+      Uint64NoVal memlock = 9;
+      Uint64NoVal as = 10;
+    }
+
+    string account = 1;
+    Uint64NoVal begin_time = 9 [json_name = "begin_time"];
+    optional string comment = 14;
+    repeated string environment = 28;
+    optional string licenses = 38;
+    string name = 45;
+    optional int32 tasks = 48;
+    string partition = 53;
+    Uint32NoVal distribution_plane_size = 54 [json_name = "distribution_plane_size"];
+    Uint32NoVal priority = 57;
+    optional string qos = 59;
+    optional string reservation = 63;
+    string script = 64;
+    Uint32NoVal time_limit = 69 [json_name = "time_limit"];
+    Uint32NoVal time_minimum = 70 [json_name = "time_minimum"];
+    bool wait_all_nodes = 78 [json_name = "wait_all_nodes"];
+    string current_working_directory = 82 [json_name = "current_working_directory"];
+    optional int32 cpus_per_task = 83 [json_name = "cpus_per_task"];
+    optional int32 minimum_cpus = 84 [json_name = "minimum_cpus"];
+    optional int32 maximum_cpus = 85 [json_name = "maximum_cpus"];
+    optional string nodes = 86;
+    optional int32 minimum_nodes = 87 [json_name = "minimum_nodes"];
+    optional int32 maximum_nodes = 88 [json_name = "maximum_nodes"];
+    optional int32 minimum_boards_per_node = 89 [json_name = "minimum_boards_per_node"];
+    optional int32 minimum_sockets_per_board = 90 [json_name = "minimum_sockets_per_board"];
+    optional int32 sockets_per_node = 91 [json_name = "sockets_per_node"];
+    optional int32 threads_per_core = 92 [json_name = "threads_per_core"];
+    optional int32 tasks_per_node = 93 [json_name = "tasks_per_node"];
+    optional int32 tasks_per_socket = 94 [json_name = "tasks_per_socket"];
+    optional int32 tasks_per_core = 95 [json_name = "tasks_per_core"];
+    optional int32 tasks_per_board = 96 [json_name = "tasks_per_board"];
+    optional int32 ntasks_per_tres = 97 [json_name = "ntasks_per_tres"];
+    optional int32 minimum_cpus_per_node = 98 [json_name = "minimum_cpus_per_node"];
+    Uint64NoVal memory_per_cpu = 99 [json_name = "memory_per_cpu"];
+    Uint64NoVal memory_per_node = 100 [json_name = "memory_per_node"];
+    optional string standard_input = 105 [json_name = "standard_input"];
+    optional string standard_output = 106 [json_name = "standard_output"];
+    optional string standard_error = 107 [json_name = "standard_error"];
+  }
+
+  string script = 1;
+  repeated JobDescription jobs = 2;
+  JobDescription job = 3;
+}
+
+message JobSubmitResp {
+  MetaResp meta = 1;
+  repeated ErrorResp errors = 2;
+  repeated WarningResp warnings = 3;
+  optional int32 job_id = 5 [json_name = "job_id"];
+  optional string step_id = 6 [json_name = "step_id"];
+  optional string job_submit_user_msg = 7 [json_name = "job_submit_user_msg"];
+}
+
+//
+// Delete job
+
+message DeleteJobReq {
+  string job_id = 1 [json_name = "job_id"]; // @gotags: validate:"numeric,gt=0,lt=10"
+  string signal = 2;
+  string flags = 3;
+}
+
+message DeleteJobResp {
+  message Status {
+    message Error {
+      string string = 1;
+      int32 code = 2;
+      string message = 3;
+    }
+
+    message Federation {
+      string sibling = 1;
+    }
+
+    Error error = 1;
+    string step_id = 2 [json_name = "step_id"];
+    Uint32NoVal job_id = 3 [json_name = "job_id"];
+    Federation federation = 4;
+  }
+
+  MetaResp meta = 1;
+  repeated ErrorResp errors = 2;
+  repeated WarningResp warnings = 3;
+  repeated Status status = 4;
+}
+
+//
+// Get nodes
+
+message NodesResp {
+  MetaResp meta = 1;
+  repeated ErrorResp errors = 2;
+  repeated WarningResp warnings = 3;
+  repeated SlurmNodeDescription nodes = 4;
+  Uint64NoVal last_update = 6 [json_name = "last_update"];
+}
+
+message SlurmNodeDescription {
+  message Enegery {
+    int32 average_watts = 1 [json_name = "average_watts"];
+    int64 base_consumed_energy = 2 [json_name = "base_consumed_energy"];
+    int64 consumed_energy = 3 [json_name = "consumed_energy"];
+    Uint32NoVal current_watts = 4 [json_name = "current_watts"];
+    int64 previous_consumed_energy = 5 [json_name = "previous_consumed_energy"];
+    int64 last_collected = 6 [json_name = "last_collected"];
+  }
+
+  string architecture = 1;
+  string burstbuffer_network_address = 2 [json_name = "burstbuffer_network_address"];
+  int32 boards = 3;
+  Uint64NoVal boot_time = 4 [json_name = "boot_time"];
+  string cluster_name = 5 [json_name = "cluster_name"];
+  int32 cores = 6;
+  int32 specialized_cores = 7 [json_name = "specialized_cores"];
+  int32 cpu_binding = 8 [json_name = "cpu_binding"];
+  int32 cpu_load = 9 [json_name = "cpu_load"];
+  Uint64NoVal free_mem = 10 [json_name = "free_mem"];
+  int32 cpus = 11;
+  int32 effective_cpus = 12 [json_name = "effective_cpus"];
+  string specialized_cpus = 13 [json_name = "specialized_cpus"];
+  Enegery energy = 14;
+  string extra = 15;
+  repeated string features = 16;
+  repeated string active_features = 17 [json_name = "active_features"];
+  string gpu_spec = 18 [json_name = "gpu_spec"];
+  string gres = 19;
+  string gres_drained = 20 [json_name = "gres_drained"];
+  string gres_used = 21 [json_name = "gres_used"];
+  string instance_id = 22 [json_name = "instance_id"];
+  string instance_type = 23 [json_name = "instance_type"];
+  Uint64NoVal last_busy = 24 [json_name = "last_busy"];
+  string mcs_label = 25 [json_name = "mcs_label"];
+  int64 specialized_memory = 26 [json_name = "specialized_memory"];
+  string name = 27;
+  repeated string next_state_after_reboot = 28 [json_name = "next_state_after_reboot"];
+  string address = 29;
+  string hostname = 30;
+  repeated string state = 31;
+  string operating_system = 32 [json_name = "operating_system"];
+  string owner = 33;
+  repeated string partitions = 34;
+  int32 port = 35;
+  int64 real_memory = 36 [json_name = "real_memory"];
+  int32 res_cores_per_gpu = 37 [json_name = "res_cores_per_gpu"];
+  string comment = 38;
+  string reason = 39;
+  Uint32NoVal reason_changed_at = 40 [json_name = "reason_changed_at"];
+  string reason_set_by_user = 41 [json_name = "reason_set_by_user"];
+  Uint64NoVal resume_after = 42 [json_name = "resume_after"];
+  string reservation = 43;
+  int64 alloc_memory = 44 [json_name = "alloc_memory"];
+  int32 alloc_cpus = 45 [json_name = "alloc_cpus"];
+  int32 alloc_idle_cpus = 46 [json_name = "alloc_idle_cpus"];
+  string tres_used = 47 [json_name = "tres_used"];
+  double tres_weighted = 48 [json_name = "tres_weighted"];
+  Uint64NoVal slurmd_start_time = 49 [json_name = "slurmd_start_time"];
+  int32 sockets = 50;
+  int32 threads = 51;
+  int32 temporary_disk = 52 [json_name = "temporary_disk"];
+  int32 weight = 53;
+  string tres = 54;
+  string version = 55;
+  Uint64NoVal tls_cert_last_renewal = 56 [json_name = "tls_cert_last_renewal"];
+  repeated string cert_flags = 57 [json_name = "cert_flags"];
+  string topology = 58;
+}
+
+//
+// Ping
+
+message ControllerPingResp {
+  string hostname = 1;
+  string pinged = 2;
+  int64 latency = 3;
+  string mode = 4;
+}
+
+message PingResp {
+  MetaResp meta = 1;
+  repeated ErrorResp errors = 2;
+  repeated WarningResp warnings = 3;
+  repeated ControllerPingResp pings = 4;
+}
+
+//
+// Get partitions
+
+message PartitionsResp {
+  MetaResp meta = 1;
+  repeated ErrorResp errors = 2;
+  repeated WarningResp warnings = 3;
+  repeated SlurmPartitionDescription partitions = 4;
+  Uint64NoVal last_update = 6 [json_name = "last_update"];
+}
+
+message SlurmPartitionDescription {
+  message Nodes {
+    string allowed_allocation = 1 [json_name = "allowed_allocation"];
+    string configured = 2;
+    int32 total = 3;
+  }
+
+  message Accounts {
+    string allowed = 1;
+    string deny = 2;
+  }
+
+  message Groups {
+    string allowed = 1;
+  }
+
+  message Qos {
+    string allowed = 1;
+    string deny = 2;
+    string assigned = 3;
+  }
+
+  message Tres {
+    string billing_weights = 1 [json_name = "billing_weights"];
+    string configured = 2;
+  }
+
+  message Cpus {
+    int32 task_binding = 1 [json_name = "task_binding"];
+    int32 total = 2;
+  }
+
+  message Defaults {
+    int64 memory_per_cpu = 1 [json_name = "memory_per_cpu"];
+    Uint64NoVal partition_memory_per_cpu = 2 [json_name = "partition_memory_per_cpu"];
+    Uint64NoVal partition_memory_per_node = 3 [json_name = "partition_memory_per_node"];
+    Uint32NoVal time = 4;
+    string job = 5;
+  }
+
+  message Maximums {
+    message Oversubscribe {
+      int32 jobs = 1;
+      repeated string flags = 2;
+    }
+
+    Uint32NoVal cpus_per_node = 1 [json_name = "cpus_per_node"];
+    Uint32NoVal cpus_per_socket = 2 [json_name = "cpus_per_socket"];
+    int64 memory_per_cpu = 3 [json_name = "memory_per_cpu"];
+    Uint64NoVal partition_memory_per_cpu = 4 [json_name = "partition_memory_per_cpu"];
+    Uint64NoVal partition_memory_per_node = 5 [json_name = "partition_memory_per_node"];
+    Uint32NoVal nodes = 6;
+    int32 shares = 7;
+    Oversubscribe oversubscribe = 8;
+    Uint32NoVal time = 9;
+    Uint32NoVal over_time_limit = 10 [json_name = "over_time_limit"];
+  }
+
+  message Minimums {
+    int32 nodes = 1;
+  }
+
+  message Priority {
+    int32 job_factor = 1 [json_name = "job_factor"];
+    int32 tier = 2;
+  }
+
+  message Timeouts {
+    Uint32NoVal resume = 1;
+    Uint32NoVal suspend = 2;
+  }
+
+  message Partition {
+    repeated string state = 1;
+  }
+
+  Nodes nodes = 1;
+  Accounts accounts = 2;
+  Groups groups = 3;
+  Qos qos = 4;
+  string alternate = 5;
+  Tres tres = 6;
+  string cluster = 7;
+  repeated string select_type = 8 [json_name = "select_type"];
+  Cpus cpus = 9;
+  Defaults defaults = 10;
+  int32 grace_time = 11 [json_name = "grace_time"];
+  Maximums maximums = 12;
+  Minimums minimums = 13;
+  string name = 14;
+  string node_sets = 15 [json_name = "node_sets"];
+  Priority priority = 16;
+  Timeouts timeouts = 17;
+  Partition partition = 18;
+  Uint32NoVal suspend_time = 19 [json_name = "suspend_time"];
+  string topology = 20;
+}
+
+//
+// Get reservations
+
+message ReservationsResp {
+  MetaResp meta = 1;
+  repeated ErrorResp errors = 2;
+  repeated WarningResp warnings = 3;
+  repeated Reservation reservations = 4;
+  Uint64NoVal last_update = 6 [json_name = "last_update"];
+}
+
+message Reservation {
+  message CoreSpecialization {
+    string node = 1;
+    string core = 2;
+  }
+
+  message PurgeCompleted {
+    Uint32NoVal time = 1;
+  }
+
+  string accounts = 1;
+  string burst_buffer = 2 [json_name = "burst_buffer"];
+  int32 core_count = 3 [json_name = "core_count"];
+  repeated CoreSpecialization core_specializations = 4 [json_name = "core_specializations"];
+  Uint64NoVal end_time = 5 [json_name = "end_time"];
+  string features = 6;
+  repeated string flags = 7;
+  string groups = 8;
+  string licenses = 9;
+  int32 max_start_delay = 10 [json_name = "max_start_delay"];
+  string name = 11;
+  int32 node_count = 12 [json_name = "node_count"];
+  string node_list = 13 [json_name = "node_list"];
+  string partition = 14;
+  PurgeCompleted purge_completed = 15 [json_name = "purge_completed"];
+  Uint64NoVal start_time = 16 [json_name = "start_time"];
+  Uint32NoVal watts = 17;
+  string tres = 18;
+  string users = 19;
+}
