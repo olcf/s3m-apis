@@ -1,0 +1,180 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PROTOC_VERSION: "29.x"
+  PROTOBUILD_REF: main
+
+jobs:
+  protolint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - run: go install github.com/yoheimuta/protolint/cmd/protolint@latest
+      - run: protolint lint proto
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: go
+            args: "common:go slurm:go status:go storage:go streaming:go tms:go"
+          - target: py
+            args: "common:py slurm:py status:py storage:py streaming:py tms:py"
+          - target: pyb
+            args: "common:pyb slurm:pyb status:pyb storage:pyb streaming:pyb tms:pyb"
+          - target: specs
+            args: "--descriptor-out protodesc.bin --descriptor-imports status:oas slurm:oas streaming:oas tms:oas"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: arduino/setup-protoc@v3
+        with:
+          version: ${{ env.PROTOC_VERSION }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: pip install "https://codeload.github.com/olcf/s3m-protobuild/zip/refs/heads/${PROTOBUILD_REF}"
+      - run: s3m-protobuild setup python go --venv .venv --go .go
+      - run: s3m-protobuild build --venv .venv --go .go --source . --out "$RUNNER_TEMP/out" ${{ matrix.args }}
+      - if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: pkg-${{ matrix.target }}
+          path: ${{ runner.temp }}/out
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 1
+
+  validate-version:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - run: |
+          tag_version=${GITHUB_REF_NAME#v}
+          file_version=$(grep '^VERSION=' MODULE | cut -d= -f2)
+          echo "Tag version: ${tag_version}"
+          echo "File version: ${file_version}"
+          if [ "${tag_version}" != "${file_version}" ]; then
+            echo "ERROR: Tag version (${tag_version}) does not match MODULE VERSION (${file_version})"
+            exit 1
+          fi
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs:
+      - protolint
+      - build
+      - validate-version
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: go
+            repo: s3m-apis.go
+          - target: py
+            repo: s3m-apis.py
+          - target: pyb
+            repo: s3m-apis.pyb
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pkg-${{ matrix.target }}
+          path: pkg
+      - env:
+          DEPLOY_KEY_GO: ${{ secrets.DEPLOY_KEY_GO }}
+          DEPLOY_KEY_PY: ${{ secrets.DEPLOY_KEY_PY }}
+          DEPLOY_KEY_PYB: ${{ secrets.DEPLOY_KEY_PYB }}
+          TARGET_REPO: ${{ github.repository_owner }}/${{ matrix.repo }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          case "${{ matrix.target }}" in
+            go)  DEPLOY_KEY="$DEPLOY_KEY_GO" ;;
+            py)  DEPLOY_KEY="$DEPLOY_KEY_PY" ;;
+            pyb) DEPLOY_KEY="$DEPLOY_KEY_PYB" ;;
+            *)   echo "ERROR: no deploy key for target ${{ matrix.target }}"; exit 1 ;;
+          esac
+
+          mkdir -p ~/.ssh
+          printf '%s\n' "${DEPLOY_KEY}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/deploy_key
+
+          git config --global user.name "S3M CI Runner"
+          git config --global user.email "s3m-ci@ornl.gov"
+          git clone "git@github.com:${TARGET_REPO}.git" target
+          cd target
+          git checkout main 2>/dev/null || git checkout -b main
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "refs/tags/${TAG}"; then
+            echo "ERROR: Tag ${TAG} already exists in ${TARGET_REPO}; aborting."
+            exit 1
+          fi
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "${GITHUB_WORKSPACE}/pkg/." .
+          git add -A
+          git commit -m "Publish: ${TAG}" || echo "No changes to commit"
+          git tag "${TAG}"
+          git push origin HEAD:main
+          git push origin "refs/tags/${TAG}"
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs:
+      - protolint
+      - build
+      - validate-version
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pkg-specs
+          path: specs
+      - run: |
+          cd specs
+          mv openapi.yaml "s3m-apis-${GITHUB_REF_NAME}-openapi.yaml"
+          mv protodesc.bin "s3m-apis-${GITHUB_REF_NAME}-protodesc.bin"
+          sha256sum *-openapi.yaml *-protodesc.bin > checksums.sha256.txt
+          gh release create "${GITHUB_REF_NAME}" \
+            --verify-tag \
+            --title "Release ${GITHUB_REF_NAME}" \
+            --notes "S3M APIs ${GITHUB_REF_NAME}" \
+            *-openapi.yaml *-protodesc.bin checksums.sha256.txt
