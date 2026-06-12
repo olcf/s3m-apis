@@ -1,0 +1,15 @@
+---
+lint:
+  rules_option:
+    max_line_length:
+      max_chars: 120
+
+    indent:
+      not_insert_newline: true
+
+  rules:
+    remove:
+      - ENUM_FIELD_NAMES_PREFIX
+      - MAX_LINE_LENGTH
+      - REPEATED_FIELD_NAMES_PLURALIZED
+      - FIELD_NAMES_LOWER_SNAKE_CASE
