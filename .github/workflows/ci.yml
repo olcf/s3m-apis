@@ -58,8 +58,8 @@ jobs:
           version: ${{ env.PROTOC_VERSION }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: pip install "https://codeload.github.com/olcf/s3m-protobuild/zip/refs/heads/${PROTOBUILD_REF}"
-      - run: s3m-protobuild setup python go --venv .venv --go .go
-      - run: s3m-protobuild build --venv .venv --go .go --source . --out "$RUNNER_TEMP/out" ${{ matrix.args }}
+      - run: s3m-protobuild setup python go --venv "$RUNNER_TEMP/venv" --go "$RUNNER_TEMP/go"
+      - run: s3m-protobuild build --venv "$RUNNER_TEMP/venv" --go "$RUNNER_TEMP/go" --source . --out "$RUNNER_TEMP/out" ${{ matrix.args }}
       - if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v4
         with:
