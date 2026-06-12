@@ -132,15 +132,8 @@ jobs:
           esac
 
           mkdir -p ~/.ssh
-          if printf '%s' "${DEPLOY_KEY}" | grep -q -- "-----BEGIN"; then
-            echo "deploy key stored as: raw"
-            printf '%s\n' "${DEPLOY_KEY}" > ~/.ssh/deploy_key
-          else
-            echo "deploy key stored as: base64"
-            printf '%s' "${DEPLOY_KEY}" | base64 --decode > ~/.ssh/deploy_key
-          fi
+          printf '%s' "${DEPLOY_KEY}" | base64 --decode > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          echo "secret bytes: $(printf '%s' "${DEPLOY_KEY}" | wc -c), decoded key lines: $(wc -l < ~/.ssh/deploy_key)"
           ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/deploy_key
