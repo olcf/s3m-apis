@@ -2,17 +2,17 @@ import re
 
 import setuptools
 
-# Read commit hash from build.info
+# Read module version from build.info
 version = None
 with open("build.info", "r") as f:
     for line in f:
-        match = re.search(r"Commit Hash:\s*(\S+)", line)
+        match = re.search(r"source\.module\.version:\s*(\S+)", line)
         if match:
-            version = "0.0.0+" + match.group(1)
+            version = match.group(1)
             break
 
 if version is None:
-    raise RuntimeError("Commit Hash not found in build.info")
+    raise RuntimeError("source.module.version not found in build.info")
 
 setuptools.setup(
     name="s3m-apis-betterproto",
