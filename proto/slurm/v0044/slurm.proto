@@ -374,6 +374,8 @@ message SlurmDBJobDescription {
     int64 end = 3;
     int32 suspended = 4;
     Uint64NoVal planned = 5;
+    int64 submission = 6;
+    Uint32NoVal limit = 7;
   }
 
   message Required {
@@ -390,6 +392,18 @@ message SlurmDBJobDescription {
   message State {
     repeated string current = 1;
     string reason = 2;
+  }
+
+  message TRES {
+    message Resource {
+      string type = 1;
+      string name = 2;
+      int32 id = 3;
+      int64 count = 4;
+    }
+
+    repeated Resource allocated = 1;
+    repeated Resource requested = 2;
   }
 
   message Step {
@@ -480,6 +494,7 @@ message SlurmDBJobDescription {
   State state = 38;
   repeated Step steps = 39;
   string submit_line = 40 [json_name = "submit_line"];
+  TRES tres = 41;
   string used_gres = 42 [json_name = "used_gres"];
   string user = 43;
   string working_directory = 45 [json_name = "working_directory"];
