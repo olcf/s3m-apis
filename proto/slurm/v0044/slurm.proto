@@ -33,9 +33,9 @@ service SlurmIndirect {
       get: "/slurm/v0.0.44/job/{job_id}"
     };
   }
-  rpc GetJobs(google.protobuf.Empty) returns (JobsResp) {
+  rpc GetJobs(JobsReq) returns (JobsResp) {
     option (google.api.http) = {
-      get: "/slurm/v0.0.44/jobs"
+      get: "/slurmdb/v0.0.44/jobs"
     };
   }
   rpc PostJobSubmit(JobSubmitReq) returns (JobSubmitResp) {
@@ -287,159 +287,25 @@ message DiagBFExit {
 //
 // Get jobs
 
-// /slurm and /slurmdb have slight variations between
-// their job outputs, therefore we have two different
-// messages for each
+message JobsReq {
+  // Filter by a comma-separated list of job names.
+  optional string job_name = 1; // @gotags: validate:"omitempty,printascii,max=512"
+
+  // Filter by a comma-separated list of job states.
+  optional string state = 2; // @gotags: validate:"omitempty,printascii,max=256"
+
+  // Limit usage results to this end time as a UNIX timestamp.
+  optional string end_time = 3; // @gotags: validate:"omitempty,numeric,gt=0,lt=11"
+
+  // Limit usage results to this start time as a UNIX timestamp.
+  optional string start_time = 4; // @gotags: validate:"omitempty,numeric,gt=0,lt=11"
+}
 
 message JobsResp {
   MetaResp meta = 1;
   repeated ErrorResp errors = 2;
   repeated WarningResp warnings = 3;
-  repeated SlurmJobDescription jobs = 4;
-  Uint64NoVal last_backfill = 5 [json_name = "last_backfill"];
-  Uint64NoVal last_update = 6 [json_name = "last_update"];
-}
-
-message SlurmJobDescription {
-  message Resources {
-    message Nodes {
-      int32 count = 1;
-      string list = 2;
-      bool whole = 3;
-      repeated string select_type = 4 [json_name = "select_type"];
-    }
-
-    repeated string select_type = 1 [json_name = "select_type"];
-    uint32 cpus = 2;
-    Uint32NoVal threads_per_core = 3 [json_name = "threads_per_core"];
-    Nodes nodes = 4;
-  }
-
-  string account = 1;
-  Uint64NoVal accrue_time = 2 [json_name = "accrue_time"];
-  string admin_comment = 3 [json_name = "admin_comment"];
-  string allocating_node = 4 [json_name = "allocating_node"];
-  Uint32NoVal array_job_id = 5 [json_name = "array_job_id"];
-  Uint32NoVal array_task_id = 6 [json_name = "array_task_id"];
-  Uint32NoVal array_max_tasks = 7 [json_name = "array_max_tasks"];
-  string array_task_string = 8 [json_name = "array_task_string"];
-  int32 association_id = 9 [json_name = "association_id"];
-  string batch_features = 10 [json_name = "batch_features"];
-  bool batch_flag = 11 [json_name = "batch_flag"];
-  string batch_host = 12 [json_name = "batch_host"];
-  repeated string flags = 13;
-  string burst_buffer = 14 [json_name = "burst_buffer"];
-  string burst_buffer_state = 15 [json_name = "burst_buffer_state"];
-  string cluster = 16;
-  string cluster_features = 17 [json_name = "cluster_features"];
-  string command = 18;
-  string comment = 19;
-  string container = 20;
-  string container_id = 21 [json_name = "container_id"];
-  bool contiguous = 22;
-  int32 core_spec = 23 [json_name = "core_spec"];
-  int32 thread_spec = 24 [json_name = "thread_spec"];
-  Uint32NoVal cores_per_socket = 25 [json_name = "cores_per_socket"];
-  Float64NoVal billable_tres = 26 [json_name = "billable_tres"];
-  Uint32NoVal cpus_per_task = 27 [json_name = "cpus_per_task"];
-  Uint32NoVal cpu_frequency_minimum = 28 [json_name = "cpu_frequency_minimum"];
-  Uint32NoVal cpu_frequency_maximum = 29 [json_name = "cpu_frequency_maximum"];
-  Uint32NoVal cpu_frequency_governor = 30 [json_name = "cpu_frequency_governor"];
-  string cpus_per_tres = 31 [json_name = "cpus_per_tres"];
-  string cron = 32;
-  Uint64NoVal deadline = 33;
-  Uint32NoVal delay_boot = 34 [json_name = "delay_boot"];
-  string dependency = 35;
-  ExitCode derived_exit_code = 36 [json_name = "derived_exit_code"];
-  Uint64NoVal eligible_time = 37 [json_name = "eligible_time"];
-  Uint64NoVal end_time = 38 [json_name = "end_time"];
-  string excluded_nodes = 39 [json_name = "excluded_nodes"];
-  ExitCode exit_code = 40 [json_name = "exit_code"];
-  string extra = 41;
-  string failed_node = 42 [json_name = "failed_node"];
-  string features = 43;
-  string federation_origin = 44 [json_name = "federation_origin"];
-  string federation_siblings_active = 45 [json_name = "federation_siblings_active"];
-  string federation_siblings_viable = 46 [json_name = "federation_siblings_viable"];
-  repeated string gres_detail = 47 [json_name = "gres_detail"];
-  uint32 group_id = 48 [json_name = "group_id"];
-  string group_name = 49 [json_name = "group_name"];
-  Uint32NoVal het_job_id = 50 [json_name = "het_job_id"];
-  string het_job_id_set = 51 [json_name = "het_job_id_set"];
-  Uint32NoVal het_job_offset = 52 [json_name = "het_job_offset"];
-  uint32 job_id = 53 [json_name = "job_id"];
-  Resources job_resources = 54 [json_name = "job_resources"];
-  repeated string job_size_str = 55 [json_name = "job_size_str"];
-  repeated string job_state = 56 [json_name = "job_state"];
-  Uint64NoVal last_sched_evaluation = 57 [json_name = "last_sched_evaluation"];
-  string licenses = 58;
-  repeated string mail_type = 59 [json_name = "mail_type"];
-  string mail_user = 60 [json_name = "mail_user"];
-  Uint32NoVal max_cpus = 61 [json_name = "max_cpus"];
-  Uint32NoVal max_nodes = 62 [json_name = "max_nodes"];
-  string mcs_label = 63 [json_name = "mcs_label"];
-  string memory_per_tres = 64 [json_name = "memory_per_tres"];
-  string name = 65;
-  string network = 66;
-  string nodes = 67;
-  int32 nice = 68;
-  Uint32NoVal tasks_per_core = 69 [json_name = "tasks_per_core"];
-  Uint32NoVal tasks_per_tres = 70 [json_name = "tasks_per_tres"];
-  Uint32NoVal tasks_per_node = 71 [json_name = "tasks_per_node"];
-  Uint32NoVal tasks_per_socket = 72 [json_name = "tasks_per_socket"];
-  Uint32NoVal tasks_per_board = 73 [json_name = "tasks_per_board"];
-  Uint32NoVal cpus = 74;
-  Uint32NoVal node_count = 75 [json_name = "node_count"];
-  Uint32NoVal tasks = 76;
-  string partition = 77;
-  string prefer = 78;
-  Uint64NoVal memory_per_cpu = 79 [json_name = "memory_per_cpu"];
-  Uint64NoVal memory_per_node = 80 [json_name = "memory_per_node"];
-  Uint32NoVal minimum_cpus_per_node = 81 [json_name = "minimum_cpus_per_node"];
-  Uint32NoVal minimum_tmp_disk_per_node = 82 [json_name = "minimum_tmp_disk_per_node"];
-  Uint64NoVal preempt_time = 83 [json_name = "preempt_time"];
-  Uint64NoVal preemptable_time = 84 [json_name = "preemptable_time"];
-  Uint64NoVal pre_sus_time = 85 [json_name = "pre_sus_time"];
-  bool hold = 86;
-  Uint32NoVal priority = 87;
-  repeated string profile = 89;
-  string qos = 90;
-  bool reboot = 91;
-  string required_nodes = 92 [json_name = "required_nodes"];
-  int32 required_switches = 93 [json_name = "required_switches"];
-  bool requeue = 94;
-  Uint64NoVal resize_time = 95 [json_name = "resize_time"];
-  int32 restart_cnt = 96 [json_name = "restart_cnt"];
-  string resv_name = 97 [json_name = "resv_name"];
-  string scheduled_nodes = 98 [json_name = "scheduled_nodes"];
-  string selinux_context = 99 [json_name = "selinux_context"];
-  repeated string shared = 100;
-  int32 sockets_per_board = 101 [json_name = "sockets_per_board"];
-  Uint32NoVal sockets_per_node = 102 [json_name = "sockets_per_node"];
-  Uint64NoVal start_time = 103 [json_name = "start_time"];
-  string state_description = 104 [json_name = "state_description"];
-  string state_reason = 105 [json_name = "state_reason"];
-  string standard_error = 106 [json_name = "standard_error"];
-  string standard_input = 107 [json_name = "standard_input"];
-  string standard_output = 108 [json_name = "standard_output"];
-  Uint64NoVal submit_time = 109 [json_name = "submit_time"];
-  Uint64NoVal suspend_time = 110 [json_name = "suspend_time"];
-  string system_comment = 111 [json_name = "system_comment"];
-  Uint32NoVal time_limit = 112 [json_name = "time_limit"];
-  Uint32NoVal time_minimum = 113 [json_name = "time_minimum"];
-  Uint32NoVal threads_per_core = 114 [json_name = "threads_per_core"];
-  string tres_bind = 115 [json_name = "tres_bind"];
-  string tres_per_job = 116 [json_name = "tres_per_job"];
-  string tres_per_node = 117 [json_name = "tres_per_node"];
-  string tres_per_socket = 118 [json_name = "tres_per_socket"];
-  string tres_per_task = 119 [json_name = "tres_per_task"];
-  string tres_req_str = 120 [json_name = "tres_req_str"];
-  string tres_alloc_str = 121 [json_name = "tres_alloc_str"];
-  uint32 user_id = 122 [json_name = "user_id"];
-  string user_name = 123 [json_name = "user_name"];
-  int32 maximum_switch_wait_time = 124 [json_name = "maximum_switch_wait_time"];
-  string wckey = 125;
-  string current_working_directory = 126 [json_name = "current_working_directory"];
+  repeated SlurmDBJobDescription jobs = 4;
 }
 
 //
@@ -508,6 +374,8 @@ message SlurmDBJobDescription {
     int64 end = 3;
     int32 suspended = 4;
     Uint64NoVal planned = 5;
+    int64 submission = 6;
+    Uint32NoVal limit = 7;
   }
 
   message Required {
@@ -524,6 +392,18 @@ message SlurmDBJobDescription {
   message State {
     repeated string current = 1;
     string reason = 2;
+  }
+
+  message TRES {
+    message Resource {
+      string type = 1;
+      string name = 2;
+      int32 id = 3;
+      int64 count = 4;
+    }
+
+    repeated Resource allocated = 1;
+    repeated Resource requested = 2;
   }
 
   message Step {
@@ -614,6 +494,7 @@ message SlurmDBJobDescription {
   State state = 38;
   repeated Step steps = 39;
   string submit_line = 40 [json_name = "submit_line"];
+  TRES tres = 41;
   string used_gres = 42 [json_name = "used_gres"];
   string user = 43;
   string working_directory = 45 [json_name = "working_directory"];
