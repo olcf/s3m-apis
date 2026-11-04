@@ -566,6 +566,10 @@ message JobSubmitReq {
     optional string standard_input = 105 [json_name = "standard_input"];
     optional string standard_output = 106 [json_name = "standard_output"];
     optional string standard_error = 107 [json_name = "standard_error"];
+    optional string tres_per_socket = 108 [json_name = "tres_per_socket"];
+    optional string tres_per_task = 109 [json_name = "tres_per_task"];
+    optional string tres_per_node = 110 [json_name = "tres_per_node"];
+    optional string tres_per_job = 111 [json_name = "tres_per_job"];
   }
 
   string script = 1;
